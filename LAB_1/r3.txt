@@ -1,0 +1,61 @@
+conf t
+
+! ========== Interface về Core (no VRF) ==========
+interface e0/0
+ ip address 121.13.1.3 255.255.255.0
+ mpls ip
+ no shutdown
+exit
+
+! ========== Interface tới khách hàng A ==========
+interface e0/1
+ ip vrf forwarding CB
+ ip address 3.3.3.3 255.255.255.0
+ no shutdown
+
+! ========== Interface tới khách hàng B ==========
+interface e0/2
+ ip vrf forwarding CA
+ ip address 4.4.4.4 255.255.255.0
+ no shutdown
+
+! ========== MPLS ==========
+mpls ip
+
+! ========== VRF Config ==========
+ip vrf CA
+ rd 500:1
+ route-target export 500:1
+ route-target import 400:1
+exit
+
+ip vrf CB
+ rd 500:2
+ route-target export 500:2
+ route-target import 400:2
+exit
+
+! ========== BGP ==========
+router bgp 500
+ bgp router-id 3.3.3.3
+ no bgp default ipv4-unicast
+
+! PE-to-PE / PE-to-Core neighbor
+ neighbor 121.13.1.2 remote-as 400
+ neighbor 121.13.1.2 update-source e0/0
+
+! VPNv4 session với R2
+ address-family vpnv4
+  neighbor 121.13.1.2 activate
+  neighbor 121.13.1.2 send-community both
+ exit-address-family
+
+! VRF CA
+ address-family ipv4 vrf CA
+  redistribute connected
+ exit-address-family
+
+! VRF CB
+ address-family ipv4 vrf CB
+  redistribute connected
+ exit-address-family
