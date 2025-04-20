@@ -1,0 +1,46 @@
+!
+ip vrf A
+ rd 100:1
+ route-target export 100:1
+ route-target import 100:1
+!
+ip vrf B
+ rd 100:2
+ route-target export 100:2
+ route-target import 100:2
+!
+interface e0/1
+ ip vrf forwarding B
+ ip address 17.16.2.1 255.255.255.0
+ no sh
+!
+interface e0/2
+ ip vrf forwarding A
+ ip address 17.16.1.1 255.255.255.0
+ no sh
+!
+interface e0/0
+ ip address 121.13.1.2 255.255.255.0
+ no sh
+ mpls ip
+!
+router ospf 1
+ router-id 2.2.2.2
+ network  121.13.1.0 0.0.0.255 area 0
+!
+router bgp 65002
+ bgp log-neighbor-changes
+ neighbor 172.16.1.1 remote-as 65001
+ !
+ address-family vpnv4
+  neighbor 172.16.1.1 activate
+  neighbor 172.16.1.1 send-community both
+ exit-address-family
+ !
+ address-family ipv4 vrf A
+  redistribute connected
+ exit-address-family
+ !
+ address-family ipv4 vrf B
+  redistribute connected
+ exit-address-family

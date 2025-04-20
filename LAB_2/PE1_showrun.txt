@@ -1,0 +1,143 @@
+Router#sh run
+Building configuration...
+
+Current configuration : 1540 bytes
+!
+! Last configuration change at 09:25:06 UTC Sun Apr 20 2025
+!
+version 15.4
+service timestamps debug datetime msec
+service timestamps log datetime msec
+no service password-encryption
+!
+hostname Router
+!
+boot-start-marker
+boot-end-marker
+!
+!
+!
+no aaa new-model
+mmi polling-interval 60
+no mmi auto-configure
+no mmi pvc
+mmi snmp-timeout 180
+!
+!
+!
+!
+!
+!
+!
+!
+
+
+!
+ip vrf A
+ rd 100:1
+ route-target export 100:1
+ route-target import 100:1
+!
+ip vrf B
+ rd 100:2
+ route-target export 100:2
+ route-target import 100:2
+!
+!
+!
+!
+ip cef
+no ipv6 cef
+!
+multilink bundle-name authenticated
+!
+!
+!
+!
+!
+!
+!
+!
+!
+redundancy
+!
+!
+!
+!
+!
+!
+!
+!
+!
+!
+!
+!
+!
+!
+!
+interface Ethernet0/0
+ ip address 121.13.1.2 255.255.255.0
+ mpls ip
+!
+interface Ethernet0/1
+ ip vrf forwarding B
+ ip address 17.16.2.1 255.255.255.0
+!
+interface Ethernet0/2
+ ip vrf forwarding A
+ ip address 17.16.1.1 255.255.255.0
+!
+interface Ethernet0/3
+ no ip address
+ shutdown
+!
+router ospf 1
+ router-id 2.2.2.2
+ network 121.13.1.0 0.0.0.255 area 0
+!
+router bgp 65002
+ bgp log-neighbor-changes
+ neighbor 172.16.1.1 remote-as 65001
+ !
+ address-family vpnv4
+  neighbor 172.16.1.1 activate
+  neighbor 172.16.1.1 send-community both
+ exit-address-family
+ !
+ address-family ipv4 vrf A
+  redistribute connected
+ exit-address-family
+ !
+ address-family ipv4 vrf B
+  redistribute connected
+ exit-address-family
+!
+ip forward-protocol nd
+!
+!
+no ip http server
+no ip http secure-server
+!
+!
+!
+!
+control-plane
+!
+!
+!
+!
+!
+!
+!
+!
+line con 0
+ logging synchronous
+line aux 0
+line vty 0 4
+ login
+ transport input none
+!
+!
+end
+
+Router#

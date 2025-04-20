@@ -1,0 +1,13 @@
+!
+interface e0/0
+ ip address 10.1.1.2 255.255.255.0
+ mpls ip
+!
+interface e0/3
+ ip address 121.13.1.1 255.255.255.0
+ mpls ip
+!
+router ospf 1
+ router-id 4.4.4.4
+ network  10.1.1.0 0.0.0.255 area 0
+ network 121.13.1.0 0.0.0.255 area 0
