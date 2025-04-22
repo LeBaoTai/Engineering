@@ -1,0 +1,230 @@
+PE2#show running-config
+Building configuration...
+
+Current configuration : 1537 bytes
+!
+! Last configuration change at 17:10:48 UTC Tue Apr 22 2025
+!
+version 15.4
+service timestamps debug datetime msec
+service timestamps log datetime msec
+no service password-encryption
+!
+hostname PE2
+!
+boot-start-marker
+boot-end-marker
+!
+!
+!
+no aaa new-model
+mmi polling-interval 60
+no mmi auto-configure
+no mmi pvc
+mmi snmp-timeout 180
+!
+!
+!
+!
+!
+!
+!
+!
+
+
+!
+ip vrf A
+ rd 100:1
+ route-target export 100:1
+ route-target import 100:1
+!
+ip vrf B
+ rd 100:2
+ route-target export 100:2
+ route-target import 100:2
+!
+!
+!
+!
+ip cef
+no ipv6 cef
+!
+multilink bundle-name authenticated
+!
+!
+!
+!
+!
+!
+!
+!
+!
+redundancy
+!
+!
+!
+!
+!
+!
+!
+!
+!
+!
+!
+!
+!
+!
+!
+interface Ethernet0/0
+ ip address 121.13.1.2 255.255.255.0
+ mpls ip
+!
+interface Ethernet0/1
+ ip vrf forwarding B
+ ip address 17.16.2.1 255.255.255.0
+!
+interface Ethernet0/2
+ ip vrf forwarding A
+ ip address 17.16.1.1 255.255.255.0
+!
+interface Ethernet0/3
+ no ip address
+ shutdown
+!
+router ospf 1
+ router-id 2.2.2.2
+ network 121.13.1.0 0.0.0.255 area 0
+!
+router bgp 65002
+ bgp log-neighbor-changes
+ neighbor 172.16.1.1 remote-as 65001
+ !
+ address-family vpnv4
+  neighbor 172.16.1.1 activate
+  neighbor 172.16.1.1 send-community both
+ exit-address-family
+ !
+ address-family ipv4 vrf A
+  redistribute connected
+ exit-address-family
+ !
+ address-family ipv4 vrf B
+  redistribute connected
+ exit-address-family
+!
+ip forward-protocol nd
+!
+!
+no ip http server
+no ip http secure-server
+!
+!
+!
+!
+control-plane
+!
+!
+!
+!
+!
+!
+!
+!
+line con 0
+ logging synchronous
+line aux 0
+line vty 0 4
+ login
+ transport input none
+!
+!
+end
+
+PE2#
+
+
+
+
+PE2#show ip bgp all summary
+For address family: IPv4 Unicast
+BGP router identifier 121.13.1.2, local AS number 65002
+BGP table version is 1, main routing table version 1
+
+Neighbor        V           AS MsgRcvd MsgSent   TblVer  InQ OutQ Up/Down  State/PfxRcd
+172.16.1.1      4        65001       0       0        1    0    0 never    Idle
+
+For address family: VPNv4 Unicast
+BGP router identifier 121.13.1.2, local AS number 65002
+BGP table version is 3, main routing table version 3
+2 network entries using 304 bytes of memory
+2 path entries using 160 bytes of memory
+2/2 BGP path/bestpath attribute entries using 304 bytes of memory
+2 BGP extended community entries using 48 bytes of memory
+0 BGP route-map cache entries using 0 bytes of memory
+0 BGP filter-list cache entries using 0 bytes of memory
+BGP using 816 total bytes of memory
+BGP activity 2/0 prefixes, 2/0 paths, scan interval 60 secs
+
+Neighbor        V           AS MsgRcvd MsgSent   TblVer  InQ OutQ Up/Down  State/PfxRcd
+172.16.1.1      4        65001       0       0        1    0    0 never    Idle
+PE2#
+
+
+
+
+
+
+PE2#show ip route
+Codes: L - local, C - connected, S - static, R - RIP, M - mobile, B - BGP
+       D - EIGRP, EX - EIGRP external, O - OSPF, IA - OSPF inter area
+       N1 - OSPF NSSA external type 1, N2 - OSPF NSSA external type 2
+       E1 - OSPF external type 1, E2 - OSPF external type 2
+       i - IS-IS, su - IS-IS summary, L1 - IS-IS level-1, L2 - IS-IS level-2
+       ia - IS-IS inter area, * - candidate default, U - per-user static route
+       o - ODR, P - periodic downloaded static route, H - NHRP, l - LISP
+       a - application route
+       + - replicated route, % - next hop override
+
+Gateway of last resort is not set
+
+      10.0.0.0/24 is subnetted, 1 subnets
+O        10.1.1.0 [110/20] via 121.13.1.1, 00:14:24, Ethernet0/0
+      121.0.0.0/8 is variably subnetted, 2 subnets, 2 masks
+C        121.13.1.0/24 is directly connected, Ethernet0/0
+L        121.13.1.2/32 is directly connected, Ethernet0/0
+      172.16.0.0/24 is subnetted, 1 subnets
+O        172.16.1.0 [110/30] via 121.13.1.1, 00:12:47, Ethernet0/0
+PE2#
+
+
+
+
+
+PE2#show ip interface brief
+Interface                  IP-Address      OK? Method Status                Protocol
+Ethernet0/0                121.13.1.2      YES manual up                    up
+Ethernet0/1                17.16.2.1       YES manual up                    up
+Ethernet0/2                17.16.1.1       YES manual up                    up
+Ethernet0/3                unassigned      YES unset  administratively down down
+PE2#
+
+
+
+
+PE2#ping 172.16.1.1
+Type escape sequence to abort.
+Sending 5, 100-byte ICMP Echos to 172.16.1.1, timeout is 2 seconds:
+!!!!!
+Success rate is 100 percent (5/5), round-trip min/avg/max = 2/2/3 ms
+PE2#
+
+
+
+PE2#show mpls forwarding
+Local      Outgoing   Prefix           Bytes Label   Outgoing   Next Hop
+Label      Label      or Tunnel Id     Switched      interface
+16         Pop Label  10.1.1.0/24      0             Et0/0      121.13.1.1
+17         No Label   17.16.1.0/24[V]  0             aggregate/A
+18         No Label   17.16.2.0/24[V]  0             aggregate/B
+19         16         172.16.1.0/24    0             Et0/0      121.13.1.1
+PE2#
